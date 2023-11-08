@@ -1,6 +1,6 @@
 ############################################
 #
-# Availability and update of injection BUP
+# Availability and uptake of injection BUP
 # Author: Rachael Ross
 # Script: Cleaning the raw data
 #
@@ -136,7 +136,7 @@ toload <- function(file){
   dat <- read_csv(paste0(sdudpath,file)) |> 
     filter(ndc %in% ndcs$code) |>
     select(year,quarter,state,number_of_prescriptions,ndc,suppression_used) |>
-    mutate(number=case_when(suppression_used==TRUE ~ 10, # impute suppressed with 10
+    mutate(number=case_when(suppression_used==TRUE ~ 5.5, # impute suppressed with 10
                             is.na(number_of_prescriptions) ~ 0,
                             .default=as.numeric(number_of_prescriptions))) |>
     left_join(ndcs, by=c("ndc"="code")) |>

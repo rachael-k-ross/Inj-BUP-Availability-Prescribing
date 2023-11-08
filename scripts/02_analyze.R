@@ -1,6 +1,6 @@
 ############################################
 #
-# Availability and update of injection BUP
+# Availability and uptake of injection BUP
 # Author: Rachael Ross
 # Script: Analyze data
 #
@@ -84,7 +84,7 @@ merged <- sdud_ |>
          facilities_per = facilitycnt/denom * 1000) |>
   arrange(state,year)
 
-write.csv(merged,paste0(path,"data/clean/merged.csv"), row.names=FALSE)
+#write.csv(merged,paste0(path,"data/clean/merged.csv"), row.names=FALSE)
 saveRDS(merged,paste0(path,"data/clean/merged.rds"))
 
 min(merged$fills_per,na.rm=TRUE)
