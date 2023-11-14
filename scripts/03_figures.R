@@ -14,6 +14,8 @@ library(ggplot2)
 library(scales)
 library(ggpubr)
 library(ggridges)
+library(gt)
+library(flextable)
 #library(haven)
 
 ############################################
@@ -195,12 +197,19 @@ statesdat <- dat |>
 #stateorder <- statesdat |> filter(year==2022) |> arrange(fills) |> pull(state_star)
 
 
-mycolors <- c("#eaebee",
-              "#c0c5cc",
-              "#969fab",
-              "#6c7989",
-              "#425367",
-              "#2e4057")
+# mycolors <- c("#eaebee",
+#               "#c0c5cc",
+#               "#969fab",
+#               "#6c7989",
+#               "#425367",
+#               "#2e4057")
+
+mycolors <- c("#2e5745",
+              "#6c897c",
+              "#abbbb4",
+              "#b4abbb",
+              "#7c6c89",
+              "#452e57")
 
 
 lollipop <- function(variable,max,axistitle){
@@ -228,8 +237,8 @@ lollipop <- function(variable,max,axistitle){
   ylab(axistitle) +
   theme_classic() + 
   theme(
-    #legend.position = "top",
-    legend.position = "none",
+    legend.position = "top",
+    #legend.position = "none",
     legend.title = element_blank(),
     panel.grid.major.x = element_line(color = "lightgray",
                                         linewidth = 0.5,
@@ -240,10 +249,35 @@ lollipop <- function(variable,max,axistitle){
    scale_color_manual(values = mycolors) +
     scale_fill_manual(values = mycolors) +
   guides(color=guide_legend(nrow=1)) +
-    theme(plot.margin = margin(5.5, 9, 5.5, 5.5, "pt"))
+    theme(plot.margin = margin(5.5, 9, 5.5, 5.5, "pt")) 
+  # +
+  #   annotate(geom = "table", x = 4500, y = "DE", label = list(numtab), 
+  #            vjust = 1, hjust = 0)
 }
 
-numrx <- lollipop(fills,fillsmax,"Number of prescriptions")
+statesdat |>
+  filter(year==2022) |>
+  filter(fills >fillsmax) |>
+  dplyr::select(state_star,fills) |>
+  arrange(-fills) |>
+  flextable() |>
+    set_header_labels(state_star = "State",
+             fills = "Number") |>
+  colformat_double(digits = 0
+  )
+
+statesdat |>
+  filter(year==2021) |>
+  filter(facilitycnt >facilitycntmax) |>
+  dplyr::select(state_star,facilitycnt) |>
+  arrange(-facilitycnt) |>
+  flextable() |>
+  set_header_labels(state_star = "State",
+                    facilitycnt = "Number") |>
+  colformat_double(digits = 0
+  )
+
+numrx <- lollipop(fills,fillsmax,"Number of prescriptions") 
 lollipop(fillsprop,fillspropmax,"Proportion of buprenorphine prescriptions that were injectable")
 numfac <- lollipop(facilitycnt,facilitycntmax,"Number of facilities")
 lollipop(facilityprop,facilitypropmax,"Proportion of facilities offering injectable buprenorphine")
