@@ -100,7 +100,7 @@ stateorder = statesdat[[2]]
 mult = 100
 ggplot(statesdat,aes(y=state, group = 1)) +
   geom_point(aes(x=fills), size=2, col="#2e4057") +
-  geom_point(aes(x=facilitycnt*mult), size=2, col="#edae49") +
+  geom_point(aes(x=facilitycnt*mult), size=2, col="#66a182") +
   scale_y_discrete(limits=stateorder) +
     scale_x_continuous(name = "Prescriptions (Navy)",
                        #breaks=seq(0, 300, 50),
@@ -111,8 +111,6 @@ ggplot(statesdat,aes(y=state, group = 1)) +
   theme(panel.grid.major = element_line(colour="lightgray", size=0.5)) +
   ylab("State")
  
-"#2e4057"  
-"#66a182"
 
 ############################################
 # Distributions by state
@@ -122,8 +120,6 @@ statesdat <- dat |>
   filter(state!="US") |>
   filter(route=="Injection") |>
   arrange(fills)
-
-names(statesdat)
 
 facdist <- ggplot(statesdat |> filter(year!=2022), aes(x = facilitycnt, y = year, group = year)) + 
   geom_density_ridges(fill = "#2e4057", 
@@ -156,14 +152,15 @@ rxdist <- ggplot(statesdat, aes(x = fills, y = year, group = year)) +
   
 ggarrange(facdist,rxdist, align="h")
 
+
 ############################################
 # Annual changes by state
 ############################################
 
 fillsmax <- 5000
-facilitycntmax <- 200 
-facilitypropmax <- 1
-fillspropmax <- .08
+facilitycntmax <- 100 
+facilitypropmax <- 20
+fillspropmax <- 4
 
 statesdat <- dat |>
   filter(state!="US") |>
@@ -181,28 +178,28 @@ statesdat <- dat |>
          fills = ifelse(is.na(fills),0,fills),
          fills_max = min(max(fills),fillsmax),
          fills_arrowend = ifelse(fills>fillsmax,fills_max,NA),
-         fillsprop = fills/(fills + fillsoral),
+         fillsprop = fills/(fills + fillsoral)*100,
          fillsprop_max = min(max(fillsprop),fillspropmax),
          fillsprop_arrowend = ifelse(fillsprop>fillspropmax,fillsprop_max,NA),
          facilitycnt_max = min(max(facilitycnt, na.rm = TRUE),facilitycntmax),
          facilitycnt_arrowend = ifelse(facilitycnt>facilitycntmax,facilitycnt_max,NA),
-         facilityprop = facilitycnt/facilityn,
+         facilityprop = facilitycnt/facilityn*100,
          facilityprop_max = min(max(facilityprop, na.rm = TRUE),facilitypropmax),
          facilityprop_arrowend = ifelse(facilityprop>facilitypropmax,facilityprop_max,NA),
          facproporal = ifelse(year==2021,faccntoral/facilityn,NA),
          .by=state_star) 
 
-#mean(statesdat$facproporal, na.rm=TRUE)
-
-#stateorder <- statesdat |> filter(year==2022) |> arrange(fills) |> pull(state_star)
-
-
-# mycolors <- c("#eaebee",
-#               "#c0c5cc",
-#               "#969fab",
-#               "#6c7989",
-#               "#425367",
-#               "#2e4057")
+# #mean(statesdat$facproporal, na.rm=TRUE)
+# 
+# #stateorder <- statesdat |> filter(year==2022) |> arrange(fills) |> pull(state_star)
+# 
+# 
+# # mycolors <- c("#eaebee",
+# #               "#c0c5cc",
+# #               "#969fab",
+# #               "#6c7989",
+# #               "#425367",
+# #               "#2e4057")
 
 mycolors <- c("#2e5745",
               "#6c897c",
@@ -232,13 +229,13 @@ lollipop <- function(variable,max,axistitle){
                 color="darkgrey", arrow = arrow(length = unit(0.07, "inches"))) +
   geom_point( aes(x=state_star, y=!!var, group=year, color=year),  size=2) + 
   coord_flip(clip = "off")+
-  scale_x_discrete(limits=stateorder) + 
+  scale_x_discrete(limits=stateorder) +
   xlab("") +
   ylab(axistitle) +
-  theme_classic() + 
+  theme_classic() +
   theme(
-    legend.position = "top",
-    #legend.position = "none",
+    #legend.position = "top",
+    legend.position = "none",
     legend.title = element_blank(),
     panel.grid.major.x = element_line(color = "lightgray",
                                         linewidth = 0.5,
@@ -249,20 +246,36 @@ lollipop <- function(variable,max,axistitle){
    scale_color_manual(values = mycolors) +
     scale_fill_manual(values = mycolors) +
   guides(color=guide_legend(nrow=1)) +
-    theme(plot.margin = margin(5.5, 9, 5.5, 5.5, "pt")) 
+    theme(plot.margin = margin(5.5, 9, 5.5, 5.5, "pt"))
   # +
   #   annotate(geom = "table", x = 4500, y = "DE", label = list(numtab), 
   #            vjust = 1, hjust = 0)
 }
 
+
+
+numrx <- lollipop(fills,fillsmax,"Number") 
+numfac <- lollipop(facilitycnt,facilitycntmax,"Number")
+
+proprx <- lollipop(fillsprop,fillspropmax,"Percentage")
+propfac <- lollipop(facilityprop,facilitypropmax,"Percentage")
+  
+
+ggarrange(numfac,propfac, labels=c("A","B"), nrow=1,
+          font.label = list(size = 12))
+
+ggarrange(numrx,proprx, labels=c("A","B"), nrow=1,
+          font.label = list(size = 12))
+
+# For tables on figures
 statesdat |>
   filter(year==2022) |>
   filter(fills >fillsmax) |>
   dplyr::select(state_star,fills) |>
   arrange(-fills) |>
   flextable() |>
-    set_header_labels(state_star = "State",
-             fills = "Number") |>
+  set_header_labels(state_star = "State",
+                    fills = "Number") |>
   colformat_double(digits = 0
   )
 
@@ -277,28 +290,42 @@ statesdat |>
   colformat_double(digits = 0
   )
 
-numrx <- lollipop(fills,fillsmax,"Number of prescriptions") 
-lollipop(fillsprop,fillspropmax,"Proportion of buprenorphine prescriptions that were injectable")
-numfac <- lollipop(facilitycnt,facilitycntmax,"Number of facilities")
-lollipop(facilityprop,facilitypropmax,"Proportion of facilities offering injectable buprenorphine")
-  
-ggarrange(numfac,numrx, labels=c("A","B"), nrow=1,
-          font.label = list(size = 12))
+statesdat |>
+  filter(year==2021) |>
+  filter(facilityprop >facilitypropmax) |>
+  dplyr::select(state_star,facilityprop) |>
+  arrange(-facilityprop) |>
+  flextable() |>
+  set_header_labels(state_star = "State",
+                    facilityprop = "Percentage") |>
+  colformat_double(digits = 1
+  )
 
-# stateorder <- statesdat |> 
-#   filter(year==2021) |> arrange(facilityprop) |> pull(state)
-#   
-# statesdat |>
+statesdat |>
+  filter(year==2022) |>
+  filter(fillsprop >fillspropmax) |>
+  dplyr::select(state_star,fillsprop) |>
+  arrange(-fillsprop) |>
+  flextable() |>
+  set_header_labels(state_star = "State",
+                    fillsprop = "Percentage") |>
+  colformat_double(digits = 1
+  )
+
+# stateorder <- statesdat |>
+#   filter(year==2021) |> arrange(facilityprop) |> pull(state_star)
+# 
+# statesdat %>%
 #   ggplot() +
-#   geom_segment( aes(x=state, xend=state, 
+#   geom_segment( aes(x=state_star, xend=state_star,
 #                     y=facilityprop, yend=facilityprop_max), color="darkgrey") +
-#   geom_point( aes(x=state, y=facilityprop, group=year, color=year),  size=2) + 
-#   geom_point( aes(x=state, y=facproporal),  color= "#66a182", size=2) +
+#   geom_point( aes(x=state_star, y=facilityprop, group=year, color=year),  size=2) +
+#   geom_point( aes(x=state_star, y=facproporal),  color= "#66a182", size=2) +
 #   coord_flip()+
-#   scale_x_discrete(limits=stateorder) + 
+#   scale_x_discrete(limits=stateorder) +
 #   xlab("") +
 #   ylab("Fac proportion") +
-#   theme_classic() + 
+#   theme_classic() +
 #   theme(
 #     legend.position = "top",
 #     legend.title = element_blank(),
