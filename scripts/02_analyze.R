@@ -6,8 +6,6 @@
 #
 ############################################
 
-path <- "C:/Users/Rachael Ross/Local/Git/Inj-BUP-Availability-Prescribing/"
-
 library(tidyverse)
 library(data.table)
 #library(haven)
@@ -15,6 +13,8 @@ library(data.table)
 ############################################
 # Load data
 ############################################
+
+path <- "C:/Users/Rachael Ross/Local/Git/Inj-BUP-Availability-Prescribing/"
 
 nssats <- readRDS(paste0(path,"data/clean/nssatsclean.rds"))
 sdud <- readRDS(paste0(path,"data/clean/sdudclean.rds"))
@@ -87,7 +87,7 @@ merged <- sdud_ |>
 #write.csv(merged,paste0(path,"data/clean/merged.csv"), row.names=FALSE)
 saveRDS(merged,paste0(path,"data/clean/merged.rds"))
 
-min(merged$fills_per,na.rm=TRUE)
-max(merged$fills_per,na.rm=TRUE) 
-min(merged$facilities_per,na.rm=TRUE)
-max(merged$facilities_per,na.rm=TRUE) 
+# min(merged$fills_per,na.rm=TRUE)
+# max(merged$fills_per,na.rm=TRUE) 
+# min(merged$facilities_per,na.rm=TRUE)
+# max(merged$facilities_per,na.rm=TRUE) 

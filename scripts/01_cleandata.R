@@ -20,13 +20,10 @@ library(readxl)
 ### Path
 nssatspath <- paste0(path,"data/nssats/")
 
-inname <- "NSSATS_PUF_2017_R"
-
 ### Load data files
 toload <- function(inname){
-  load(paste0(nssatspath,inname,".RData"))
-  if (exists("PUF")) {PUF
-  }else{df}
+  name <- load(paste0(nssatspath,inname,".RData"))
+  get(name)
 }
 
 dat17 <- toload("NSSATS_PUF_2017_R")
@@ -34,6 +31,8 @@ dat18 <- toload("NSSATS_PUF_2018_R")
 dat19 <- toload("NSSATS_PUF_2019_R")
 dat20 <- toload("NSSATS_PUF_2020_r")
 dat21 <- toload("NSUMHSS_2021_PUF_R")
+dat22 <- toload("NSUMHSS_2022_PUF")
+
 
 ### 2017 data
 dat17_clean <- dat17 %>%
@@ -92,8 +91,33 @@ dat21_clean <- dat21 %>%
   select(anyagonist,buporal,bupxr,bupimplant,medicaid,year,LOCATIONSTATE) |>
   rename(STATE=LOCATIONSTATE)
 
+toclean_ <- function(dat,year){
+dat %>%
+    rowwise() %>% 
+    mutate(moud_sum=sum(SRVC108,SRVC85,SRVC87,SRVC86,SRVC129,SRVC130,na.rm=TRUE),
+           agon_sum=sum(SRVC85,SRVC87,SRVC86,SRVC129,SRVC130,na.rm=TRUE),
+           moud_sumna=sum(SRVC108,SRVC85,SRVC87,SRVC86,SRVC129,SRVC130),
+           agon_sumna=sum(SRVC85,SRVC87,SRVC86,SRVC129,SRVC130),) %>%
+    ungroup() %>%
+    mutate(anymoud = ifelse(moud_sum>0,1,
+                            ifelse(is.na(moud_sumna),NA,1)),
+           anyagonist = ifelse(agon_sum>0,1,
+                               ifelse(is.na(agon_sumna),NA,0)),
+           buporal = ifelse(SRVC87==1|SRVC86==1,1,ifelse(SRVC87==0&SRVC86==0,0,NA)),
+           bupxr = ifelse(SRVC130==1,1,0),
+           bupimplant = ifelse(SRVC129==1,1,0),
+           medicaid = ifelse(REVCHK5_SU==1,1,ifelse(REVCHK5_SU==0,0,NA)),
+           year=year) |>
+    filter(anymoud==1) |>
+    select(anyagonist,buporal,bupxr,bupimplant,medicaid,year,LOCATIONSTATE) |>
+    rename(STATE=LOCATIONSTATE)
+}
+
+dat21_clean <- toclean_(dat21,2021)
+dat22_clean <- toclean_(dat22,2022)
+
 ### Combine data
-dat <- rbind(dat17_clean,dat18_clean,dat19_clean,dat20_clean,dat21_clean) %>%
+dat <- rbind(dat17_clean,dat18_clean,dat19_clean,dat20_clean,dat21_clean,dat22_clean) %>%
   ungroup() %>%
   mutate(year=factor(year),
          anybup = case_when(buporal==1 ~ 1,
