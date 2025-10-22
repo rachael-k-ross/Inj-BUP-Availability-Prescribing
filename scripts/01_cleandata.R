@@ -189,17 +189,18 @@ saveRDS(datbyyr,paste0(path,"data/clean/sdudclean.rds"))
 denompath <- paste0(path,"data/denom/")
 
 ### Load data
-denom <- read_excel(paste0(denompath,"SUD Dashboard (2020).xlsx"))[,c(1,5,6)] |>
-  rename(num19 = "Number of Medicaid beneficiaries treated for an OUD in 2019",
-         num20 = "Number of Medicaid beneficiaries treated for an OUD in 2020") |>
+denom <- read_excel(paste0(denompath,"denom.xlsx")) |>
+  mutate(num17 = ifelse(is.na(num17),num18,num17),
+         num18 = ifelse(is.na(num18),(num17+num19)/2,num18),
+         num20 = ifelse(is.na(num20),(num19+num21)/2,num20),
+         num22 = num21) |>
   full_join(as_tibble(cbind(state.abb,state.name)), by=c("State"="state.name")) |>
   mutate(state = case_when(State == "United States" ~ "US",
                            .default = state.abb)) |>
-  filter(!is.na(state) & state!="TN") |>
-  mutate(num19 = as.numeric(num19),
-         num20 = as.numeric(num20),
-         denom = (num19 + num20)/2) |>
-  select(state,denom)
+  select(state,starts_with("num")) |>
+  pivot_longer(!state, names_to = "year", values_to = "denom", names_prefix = "num") |>
+  mutate(year = factor(as.numeric(year) + 2000)) |>
+  filter(!is.na(state)) 
 
 ### Save
 saveRDS(denom,paste0(path,"data/clean/denom.rds"))

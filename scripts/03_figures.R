@@ -32,6 +32,7 @@ dat <- readRDS(paste0(path,"data/clean/merged.rds")) |>
 # National time trends
 ############################################
 
+# Counts
 oral <- dat |>
   filter(state=="US") |>
   filter(route=="Oral") %>%
@@ -39,7 +40,7 @@ oral <- dat |>
   geom_line(col="#2e4057"  , linewidth=1) +
   geom_point(size=2) +
   theme_classic() +
-  theme(panel.grid.major = element_line(colour="lightgray", size=0.5)) + 
+  theme(panel.grid.major = element_line(colour="lightgray", linewidth=0.5)) + 
   xlab("Year") +
   ylab("Prescription fills") + 
   scale_y_continuous(labels = comma) +
@@ -64,46 +65,38 @@ inj <- dat |>
 ggarrange(inj,oral, labels=c("A","B"), nrow=1,
           font.label = list(size = 12))
 
-
-############################################
-# Distributions by state
-############################################
-
-statesdat <- dat |>
-  filter(state!="US") |>
-  filter(route=="Injection") |>
-  arrange(fills)
-
-facdist <- ggplot(statesdat |> filter(year!=2022), aes(x = facilitycnt, y = year, group = year)) + 
-  geom_density_ridges(fill = "#2e4057", 
-                      #rel_min_height = 0.02,
-                      scale = 3, 
-                      alpha = 0.7,
-                      ) +
-  ylab("Year") + 
-  xlab("Facilities") +
+# Rates
+oral <- dat |>
+  filter(state=="US") |>
+  filter(route=="Oral") %>%
+  ggplot(.,aes(x = year, y=fills_per, group = 1)) +
+  geom_line(col="#2e4057"  , linewidth=1) +
+  geom_point(size=2) +
   theme_classic() +
-  scale_y_discrete(expand = c(0, .2)) +
-  scale_x_continuous(expand = c(.01,0),
-                     limits = c(0,200)) + 
-  theme(panel.grid.major = element_line(colour="lightgray", size=0.5))
+  theme(panel.grid.major = element_line(colour="lightgray", linewidth=0.5)) + 
+  xlab("Year") +
+  ylab("Fills per 100 beneficiaries") + 
+  scale_y_continuous(labels = comma) +
+  scale_x_discrete(expand = c(.03,0)) 
 
-rxdist <- ggplot(statesdat, aes(x = fills, y = year, group = year)) + 
-  geom_density_ridges(fill = "#2e4057", 
-                      #rel_min_height = 0.02,
-                      scale = 3, 
-                      labels = comma,
-                      alpha = 0.7,
-  ) +
-  ylab("Year") + 
-  xlab("Prescriptions") +
+inj <- dat |>
+  filter(state=="US") |>
+  filter(route=="Injection") %>%
+  ggplot(.,aes(x = year, y=fills_per, group = 1)) +
+  geom_line(col="#2e4057"  , linewidth=1) +
+  geom_point(size=2) +
   theme_classic() +
-  scale_y_discrete(expand = c(0, .2)) +
-  scale_x_continuous(expand = c(.01,0),
-                     limits = c(0,10000),labels = comma) +
-  theme(panel.grid.major = element_line(colour="lightgray", size=0.5)) 
-  
-ggarrange(facdist,rxdist, align="h")
+  theme(panel.grid.major = element_line(colour="lightgray", size=0.5)) + 
+  xlab("Year") +
+  ylab("Fills per 100 beneficiaries") + 
+  #scale_y_continuous(breaks=seq(0, 200000, 50000),
+                     #labels = comma,
+                     #expand = c(0, 5000),
+                     #limits = c(0,200000)) +
+  scale_x_discrete(expand = c(.03,0)) 
+
+ggarrange(inj,oral, labels=c("A","B"), nrow=1,
+          font.label = list(size = 12))
 
 
 ############################################
@@ -181,24 +174,21 @@ lollipop <- function(variable,max,axistitle){
 
 
 
-rx <- lollipop(fills,fillsmax,"Number of prescription fills") 
-rx_per <- lollipop(fills_per,fills_permax,"Fills per 100 beneficiaries")
-
-ggarrange(rx,rx_per, labels=c("A","B"), nrow=1,
-          font.label = list(size = 12))
+#rx <- lollipop(fills,fillsmax,"Number of prescription fills") 
+lollipop(fills_per,fills_permax,"Fills per 100 beneficiaries")
 
 
 # For tables on figures
-statesdat |>
-  filter(year==2022) |>
-  filter(fills >fillsmax) |>
-  dplyr::select(state_star,fills) |>
-  arrange(-fills) |>
-  flextable() |>
-  set_header_labels(state_star = "State",
-                    fills = "Number") |>
-  colformat_double(digits = 0
-  )
+# statesdat |>
+#   filter(year==2022) |>
+#   filter(fills >fillsmax) |>
+#   dplyr::select(state_star,fills) |>
+#   arrange(-fills) |>
+#   flextable() |>
+#   set_header_labels(state_star = "State",
+#                     fills = "Number") |>
+#   colformat_double(digits = 0
+#   )
 
 statesdat |>
   filter(year==2022) |>
@@ -221,10 +211,8 @@ statesdat <- dat |>
   filter(route=="Injection") |>
   dplyr::select(year,state,fills_per,fills) |>
   complete(year,state) |>
-  mutate(fills_per = ifelse(state=="TN",NA,
-                            ifelse(is.na(fills_per),0,fills_per)*100),
-         fills = ifelse(state=="TN",NA,
-                        ifelse(is.na(fills),0,fills)))
+  mutate(fills_per = ifelse(is.na(fills_per),0,fills_per)*100,
+         fills = ifelse(is.na(fills),0,fills))
          
 
 states <- map_data("state") |>
